@@ -302,33 +302,9 @@ class GRPOTrainer(Trainer):
             args = GRPOConfig(f"{model_name}-GRPO")
 
         # Data collator
-        if args.padding_free:
-            if data_collator is not None:
-                raise ValueError("Passing a custom data collator is not supported when using padding-free.")
-            if args.packing:
-                warnings.warn(
-                    "You are passing `packing=True` and `padding_free=True` which is not recommended. Please refer "
-                    "to the documentation to understand why this is not recommended."
-                )
-            if model.config._attn_implementation != "flash_attention_2":
-                warnings.warn(
-                    "Padding-free training is enabled, but the attention implementation is not set to "
-                    "'flash_attention_2'. Padding-free training flattens batches into a single sequence, and "
-                    "'flash_attention_2' is the only known attention mechanism that reliably supports this. Using "
-                    "other implementations may lead to unexpected behavior. To ensure compatibility, set "
-                    "`attn_implementation='flash_attention_2'` in the model configuration, or verify that your "
-                    "attention mechanism can handle flattened sequences."
-                )
-            if args.per_device_train_batch_size == 1:
-                warnings.warn(
-                    "You are using a per_device_train_batch_size of 1 with padding-free training. Using a batch size "
-                    "of 1 anihilate the benefits of padding-free training. Please consider increasing the batch size "
-                    "to at least 2."
-                )
-            data_collator = DataCollatorWithFlattening()
-
         if data_collator is None:
-            data_collator = DataCollatorForLanguageModeling(tokenizer=processing_class, mlm=False)
+            def data_collator(features):
+                return features
 
         # Models
         # Trained model
